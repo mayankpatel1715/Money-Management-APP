@@ -28,4 +28,3 @@ export default defineConfig({
   },
 });
 
-"there is the clash between cash and online as I select either of two the daily spending and division of income changes to latest selection of cash or online. Fix this and add a function where the division of the income get add up starting of each month"
