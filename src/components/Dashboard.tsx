@@ -1,18 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { 
   PieChart as PieChartIcon, 
-  BarChart as BarChartIcon, 
   Wallet, 
   Target, 
   AlertTriangle,
   TrendingUp,
-  Settings,
   Bell,
   Trash2,
-  Save,
   RotateCcw,
   CreditCard,
-  Banknote
+  Banknote,
+  PiggyBank
 } from 'lucide-react';
 import { format } from 'date-fns';
 import {
@@ -26,11 +24,21 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer
+  ResponsiveContainer,
+  LineChart,
+  Line
 } from 'recharts';
-import { formatCurrency, calculateBudget, getDailySpendingLimit, getSpendingStatus } from '../lib/utils';
+import { 
+  formatCurrency, 
+  calculateBudget, 
+  getDailySpendingLimit, 
+  getSpendingStatus, 
+  getTotalIncome,
+  calculateMonthlySavings,
+  getAccumulatedSavings
+} from '../lib/utils';
 import { saveData, loadData, clearData } from '../lib/storage';
-import type { Transaction, BudgetPercentages, SavingsGoal, SpendingAlert } from '../types';
+import type { Transaction, BudgetPercentages, SavingsGoal, SpendingAlert, MonthlySavings } from '../types';
 
 const defaultPercentages: BudgetPercentages = {
   needs: 40,
@@ -52,10 +60,15 @@ export default function Dashboard() {
   const [alerts, setAlerts] = useState<SpendingAlert[]>([]);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [tempIncome, setTempIncome] = useState('');
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'cash' | 'online'>('online');
+  const [incomePaymentMethod, setIncomePaymentMethod] = useState<'cash' | 'online'>('online');
+  const [expensePaymentMethod, setExpensePaymentMethod] = useState<'cash' | 'online'>('online');
+  const [showSavings, setShowSavings] = useState(false);
 
-  const budget = calculateBudget(monthlyIncome, percentages);
+  const totalMonthlyIncome = getTotalIncome(transactions);
+  const budget = calculateBudget(totalMonthlyIncome, percentages);
   const dailyLimit = getDailySpendingLimit(budget.needs);
+  const monthlySavings = calculateMonthlySavings(transactions);
+  const accumulatedSavings = getAccumulatedSavings(monthlySavings);
 
   useEffect(() => {
     const savedData = loadData();
@@ -75,13 +88,13 @@ export default function Dashboard() {
 
   useEffect(() => {
     saveData({
-      monthlyIncome,
+      monthlyIncome: totalMonthlyIncome,
       transactions,
       percentages,
       savingsGoals,
       alerts,
     });
-  }, [monthlyIncome, transactions, percentages, savingsGoals, alerts]);
+  }, [totalMonthlyIncome, transactions, percentages, savingsGoals, alerts]);
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
@@ -92,13 +105,12 @@ export default function Dashboard() {
     e.preventDefault();
     const incomeValue = parseFloat(tempIncome);
     if (!isNaN(incomeValue) && incomeValue > 0) {
-      setMonthlyIncome(incomeValue);
       addTransaction({
         amount: incomeValue,
         category: 'needs',
-        description: `Monthly Income (${selectedPaymentMethod})`,
+        description: `Income (${incomePaymentMethod})`,
         type: 'income',
-        paymentMethod: selectedPaymentMethod
+        paymentMethod: incomePaymentMethod
       });
       setTempIncome('');
     }
@@ -110,28 +122,34 @@ export default function Dashboard() {
       id: crypto.randomUUID(),
       date: new Date().toISOString(),
     };
-    setTransactions([newTransaction, ...transactions]);
 
-    if (transaction.type === 'expense') {
-      const categoryTransactions = transactions
-        .filter(t => t.category === transaction.category)
-        .reduce((sum, t) => sum + (t.type === 'expense' ? t.amount : 0), 0);
+    setTransactions(prevTransactions => {
+      const updatedTransactions = [newTransaction, ...prevTransactions];
+      
+      // If it's an expense, check budget status
+      if (transaction.type === 'expense') {
+        const categoryTransactions = updatedTransactions
+          .filter(t => t.category === transaction.category)
+          .reduce((sum, t) => sum + (t.type === 'expense' ? t.amount : 0), 0);
 
-      const categoryBudget = budget[transaction.category];
-      const status = getSpendingStatus(categoryTransactions + transaction.amount, categoryBudget);
+        const categoryBudget = budget[transaction.category];
+        const status = getSpendingStatus(categoryTransactions, categoryBudget);
 
-      if (status !== 'normal') {
-        setAlerts(prev => [...prev, {
-          type: status,
-          message: `You're ${status === 'warning' ? 'close to' : 'exceeding'} your ${transaction.category} budget!`,
-          category: transaction.category
-        }]);
+        if (status !== 'normal') {
+          setAlerts(prev => [...prev, {
+            type: status,
+            message: `You're ${status === 'warning' ? 'close to' : 'exceeding'} your ${transaction.category} budget!`,
+            category: transaction.category
+          }]);
+        }
       }
-    }
+
+      return updatedTransactions;
+    });
   };
 
   const deleteTransaction = (id: string) => {
-    setTransactions(transactions.filter(t => t.id !== id));
+    setTransactions(prevTransactions => prevTransactions.filter(t => t.id !== id));
   };
 
   const resetData = () => {
@@ -144,15 +162,6 @@ export default function Dashboard() {
       setAlerts([]);
       setTempIncome('');
     }
-  };
-
-  const addSavingsGoal = (goal: Omit<SavingsGoal, 'id' | 'currentAmount'>) => {
-    const newGoal = {
-      ...goal,
-      id: crypto.randomUUID(),
-      currentAmount: 0,
-    };
-    setSavingsGoals([...savingsGoals, newGoal]);
   };
 
   const pieChartData = [
@@ -181,6 +190,13 @@ export default function Dashboard() {
             Financial Dashboard
           </h1>
           <div className="flex items-center gap-4">
+            <button
+              onClick={() => setShowSavings(!showSavings)}
+              className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-200 hover:bg-purple-200 dark:hover:bg-purple-800 transition-colors"
+              title="Toggle savings view"
+            >
+              <PiggyBank className="w-5 h-5" />
+            </button>
             <button
               onClick={resetData}
               className="p-2 rounded-lg bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-200 hover:bg-red-200 dark:hover:bg-red-800 transition-colors"
@@ -219,21 +235,21 @@ export default function Dashboard() {
                   value={tempIncome}
                   onChange={(e) => setTempIncome(e.target.value)}
                   className="flex-1 p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  placeholder="Enter monthly income"
+                  placeholder="Enter income amount"
                 />
                 <button
                   type="submit"
                   className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
                 >
-                  Save
+                  Add
                 </button>
               </div>
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => setSelectedPaymentMethod('cash')}
+                  onClick={() => setIncomePaymentMethod('cash')}
                   className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded ${
-                    selectedPaymentMethod === 'cash'
+                    incomePaymentMethod === 'cash'
                       ? 'bg-green-500 text-white'
                       : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200'
                   }`}
@@ -243,9 +259,9 @@ export default function Dashboard() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setSelectedPaymentMethod('online')}
+                  onClick={() => setIncomePaymentMethod('online')}
                   className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded ${
-                    selectedPaymentMethod === 'online'
+                    incomePaymentMethod === 'online'
                       ? 'bg-blue-500 text-white'
                       : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200'
                   }`}
@@ -256,6 +272,10 @@ export default function Dashboard() {
               </div>
             </form>
             <div className="mt-4 space-y-2 dark:text-gray-200">
+              <p className="flex justify-between">
+                <span>Total Monthly Income:</span>
+                <span>{formatCurrency(totalMonthlyIncome)}</span>
+              </p>
               <p className="flex justify-between">
                 <span>Needs ({percentages.needs}%):</span>
                 <span>{formatCurrency(budget.needs)}</span>
@@ -301,7 +321,7 @@ export default function Dashboard() {
                   category: formData.get('category') as 'needs' | 'wants' | 'investments',
                   description: formData.get('description') as string,
                   type: 'expense',
-                  paymentMethod: selectedPaymentMethod
+                  paymentMethod: expensePaymentMethod
                 });
                 form.reset();
               }}
@@ -333,9 +353,9 @@ export default function Dashboard() {
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => setSelectedPaymentMethod('cash')}
+                  onClick={() => setExpensePaymentMethod('cash')}
                   className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded ${
-                    selectedPaymentMethod === 'cash'
+                    expensePaymentMethod === 'cash'
                       ? 'bg-green-500 text-white'
                       : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200'
                   }`}
@@ -345,9 +365,9 @@ export default function Dashboard() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setSelectedPaymentMethod('online')}
+                  onClick={() => setExpensePaymentMethod('online')}
                   className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded ${
-                    selectedPaymentMethod === 'online'
+                    expensePaymentMethod === 'online'
                       ? 'bg-blue-500 text-white'
                       : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200'
                   }`}
@@ -367,45 +387,105 @@ export default function Dashboard() {
 
           {/* Charts */}
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md col-span-full">
-            <div className="flex items-center gap-2 mb-4">
-              <PieChartIcon className="w-5 h-5 text-purple-500" />
-              <h2 className="text-xl font-semibold dark:text-white">Budget Distribution</h2>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <PieChartIcon className="w-5 h-5 text-purple-500" />
+                <h2 className="text-xl font-semibold dark:text-white">
+                  {showSavings ? 'Monthly Savings' : 'Budget Distribution'}
+                </h2>
+              </div>
+              <button
+                onClick={() => setShowSavings(!showSavings)}
+                className="px-4 py-2 text-sm bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-200 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-800 transition-colors"
+              >
+                {showSavings ? 'Show Budget' : 'Show Savings'}
+              </button>
             </div>
             <div className="grid md:grid-cols-2 gap-8">
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={pieChartData}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                      label={({ name, value }) => `${name}: ${formatCurrency(value)}`}
-                    >
-                      {pieChartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={Object.values(COLORS)[index]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={spendingData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis tickFormatter={(value) => `₹${value}`} />
-                    <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                    <Legend />
-                    <Bar dataKey="budget" name="Budget" fill="#8884d8" />
-                    <Bar dataKey="spent" name="Spent" fill="#82ca9d" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+              {showSavings ? (
+                <>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={monthlySavings}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="month" />
+                        <YAxis tickFormatter={(value) => `₹${value}`} />
+                        <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                        <Legend />
+                        <Line type="monotone" dataKey="needs" stroke={COLORS.needs} name="Needs" />
+                        <Line type="monotone" dataKey="wants" stroke={COLORS.wants} name="Wants" />
+                        <Line type="monotone" dataKey="investments" stroke={COLORS.investments} name="Investments" />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg">
+                    <h3 className="text-lg font-semibold mb-4 dark:text-white">Total Accumulated Savings</h3>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 dark:text-gray-300">Needs:</span>
+                        <span className="text-lg font-semibold text-green-500">{formatCurrency(accumulatedSavings.needs)}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 dark:text-gray-300">Wants:</span>
+                        <span className="text-lg font-semibold text-blue-500">{formatCurrency(accumulatedSavings.wants)}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 dark:text-gray-300">Investments:</span>
+                        <span className="text-lg font-semibold text-purple-500">{formatCurrency(accumulatedSavings.investments)}</span>
+                      </div>
+                      <div className="pt-4 border-t dark:border-gray-600">
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-600 dark:text-gray-300">Total:</span>
+                          <span className="text-xl font-bold text-gray-900 dark:text-white">
+                            {formatCurrency(
+                              accumulatedSavings.needs +
+                              accumulatedSavings.wants +
+                              accumulatedSavings.investments
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={pieChartData}
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                          label={({ name, value }) => `${name}: ${formatCurrency(value)}`}
+                        >
+                          {pieChartData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={Object.values(COLORS)[index]} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={spendingData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis tickFormatter={(value) => `₹${value}`} />
+                        <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                        <Legend />
+                        <Bar dataKey="budget" name="Budget" fill="#8884d8" />
+                        <Bar dataKey="spent" name="Spent" fill="#82ca9d" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 

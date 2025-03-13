@@ -23,6 +23,13 @@ export interface SavingsGoal {
   category: 'short_term' | 'long_term';
 }
 
+export interface MonthlySavings {
+  month: string; // Format: 'YYYY-MM'
+  needs: number;
+  wants: number;
+  investments: number;
+}
+
 export interface User {
   id: string;
   monthlyIncome: number;
