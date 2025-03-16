@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { 
   PieChart as PieChartIcon, 
+  BarChart as BarChartIcon, 
   Wallet, 
   Target, 
   AlertTriangle,
   TrendingUp,
+  Settings,
   Bell,
   Trash2,
+  Save,
   RotateCcw,
   CreditCard,
   Banknote,
@@ -105,13 +108,36 @@ export default function Dashboard() {
     e.preventDefault();
     const incomeValue = parseFloat(tempIncome);
     if (!isNaN(incomeValue) && incomeValue > 0) {
+      // Add income transactions for each category based on percentages
+      const needsAmount = (incomeValue * percentages.needs) / 100;
+      const wantsAmount = (incomeValue * percentages.wants) / 100;
+      const investmentsAmount = (incomeValue * percentages.investments) / 100;
+
+      // Add three separate transactions for each category
       addTransaction({
-        amount: incomeValue,
+        amount: needsAmount,
         category: 'needs',
-        description: `Income (${incomePaymentMethod})`,
+        description: `Income - Needs (${incomePaymentMethod})`,
         type: 'income',
         paymentMethod: incomePaymentMethod
       });
+
+      addTransaction({
+        amount: wantsAmount,
+        category: 'wants',
+        description: `Income - Wants (${incomePaymentMethod})`,
+        type: 'income',
+        paymentMethod: incomePaymentMethod
+      });
+
+      addTransaction({
+        amount: investmentsAmount,
+        category: 'investments',
+        description: `Income - Investments (${incomePaymentMethod})`,
+        type: 'income',
+        paymentMethod: incomePaymentMethod
+      });
+
       setTempIncome('');
     }
   };
