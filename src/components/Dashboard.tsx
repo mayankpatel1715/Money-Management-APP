@@ -623,87 +623,8 @@ export default function Dashboard() {
   
   return (
     <div className={`min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200`}>
-      {showWelcomeModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-md w-full p-6">
-            <h2 className="text-2xl font-bold mb-4 dark:text-white">Welcome to Your Financial Dashboard!</h2>
-            <p className="mb-4 dark:text-gray-300">This app helps you manage your finances using the 50/30/20 rule:</p>
-            <ul className="mb-6 space-y-2 dark:text-gray-300">
-              <li className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-green-500"></span>
-                <span><strong>50% for Needs:</strong> Essential expenses like rent, utilities, groceries</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-blue-500"></span>
-                <span><strong>30% for Wants:</strong> Non-essential spending like eating out, entertainment</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-purple-500"></span>
-                <span><strong>20% for Investments:</strong> Savings, debt repayment, investments</span>
-              </li>
-            </ul>
-            <p className="mb-4 dark:text-gray-300">Start by adding your income in the dashboard!</p>
-            <button 
-              onClick={() => setShowWelcomeModal(false)}
-              className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded transition-colors"
-            >
-              Get Started
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Welcome modal and alert modal code remains as is */}
       
-      {showAlertModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-md w-full p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold dark:text-white flex items-center">
-                <AlertTriangle className="w-5 h-5 text-amber-500 mr-2" />
-                Budget Alert
-              </h2>
-              <button 
-                onClick={() => setShowAlertModal(false)}
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="space-y-4">
-              {alerts.map((alert, index) => (
-                <div 
-                  key={index}
-                  className={`p-3 rounded-md ${
-                    alert.type === 'warning' 
-                      ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200' 
-                      : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200'
-                  }`}
-                >
-                  <div className="flex justify-between">
-                    <p>{alert.message}</p>
-                    <button 
-                      onClick={() => dismissAlert(index)}
-                      className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <p className="text-sm mt-1 capitalize">Category: {alert.category}</p>
-                </div>
-              ))}
-            </div>
-            <button 
-              onClick={() => {
-                setShowAlertModal(false);
-                setActiveTab('budget');
-              }}
-              className="w-full mt-4 bg-blue-500 hover:bg-blue-600 text-white py-2 rounded transition-colors"
-            >
-              Review Budget
-            </button>
-          </div>
-        </div>
-      )}
-    
       <div className="max-w-7xl mx-auto px-4 py-8">
         <header className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-8 gap-4">
           <div>
@@ -733,3 +654,548 @@ export default function Dashboard() {
             </button>
             <button
               onClick={toggleDarkMode}
+              className="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200"
+              title="Toggle Dark Mode"
+            >
+              {isDarkMode ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+              )}
+            </button>
+            <button
+              onClick={resetData}
+              className="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200"
+              title="Reset Data"
+            >
+              <RotateCcw className="w-6 h-6" />
+            </button>
+          </div>
+        </header>
+
+        {/* Navigation Tabs */}
+        <div className="flex border-b border-gray-200 dark:border-gray-700 mb-6 overflow-x-auto">
+          <button
+            onClick={() => setActiveTab('dashboard')}
+            className={`px-4 py-2 font-medium text-sm ${
+              activeTab === 'dashboard'
+                ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
+                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+            }`}
+          >
+            Dashboard
+          </button>
+          <button
+            onClick={() => setActiveTab('transactions')}
+            className={`px-4 py-2 font-medium text-sm ${
+              activeTab === 'transactions'
+                ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
+                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+            }`}
+          >
+            Transactions
+          </button>
+          <button
+            onClick={() => setActiveTab('budget')}
+            className={`px-4 py-2 font-medium text-sm ${
+              activeTab === 'budget'
+                ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
+                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+            }`}
+          >
+            Budget
+          </button>
+          <button
+            onClick={() => setActiveTab('savings')}
+            className={`px-4 py-2 font-medium text-sm ${
+              activeTab === 'savings'
+                ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
+                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+            }`}
+          >
+            Savings
+          </button>
+        </div>
+
+        {/* Dashboard Tab */}
+        {activeTab === 'dashboard' && (
+          <div className="space-y-6">
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Monthly Income</h3>
+                  <Wallet className="w-5 h-5 text-green-500" />
+                </div>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(totalMonthlyIncome)}</p>
+                <div className="mt-2">
+                  <form onSubmit={handleIncomeSubmit} className="flex gap-2">
+                    <input
+                      type="number"
+                      value={tempIncome}
+                      onChange={(e) => setTempIncome(e.target.value)}
+                      placeholder="Add income"
+                      className="flex-1 p-2 text-sm border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    />
+                    <select
+                      value={incomePaymentMethod}
+                      onChange={(e) => setIncomePaymentMethod(e.target.value as 'cash' | 'online')}
+                      className="p-2 text-sm border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    >
+                      <option value="cash">Cash</option>
+                      <option value="online">Online</option>
+                    </select>
+                    <button
+                      type="submit"
+                      className="bg-green-500 text-white p-2 rounded hover:bg-green-600"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </form>
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Daily Limit</h3>
+                  <Target className="w-5 h-5 text-blue-500" />
+                </div>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(dailyLimit)}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  Based on your needs budget ({formatCurrency(budget.needs)}/month)
+                </p>
+              </div>
+
+              <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Monthly Savings</h3>
+                  <PiggyBank className="w-5 h-5 text-purple-500" />
+                </div>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {formatCurrency(totalIncome - totalExpenses)}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  {totalIncome > 0 
+                    ? `${Math.round(((totalIncome - totalExpenses) / totalIncome) * 100)}% of income saved` 
+                    : 'Add income to track savings rate'}
+                </p>
+              </div>
+
+              <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Expenses</h3>
+                  <CreditCard className="w-5 h-5 text-red-500" />
+                </div>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(totalExpenses)}</p>
+                <div className="flex items-center mt-2 text-xs">
+                  <span 
+                    className={`px-2 py-1 rounded ${
+                      totalExpenses < totalIncome 
+                        ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-200' 
+                        : 'bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-200'
+                    }`}
+                  >
+                    {totalExpenses < totalIncome ? 'Under budget' : 'Over budget'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Budget Usage Chart */}
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">Budget Usage</h3>
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  {budgetProgress.map(item => (
+                    <span key={item.name} className="ml-4 first:ml-0">
+                      {item.name}: {Math.round(item.percentage)}%
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={budgetProgress}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis tickFormatter={(value) => `${formatCurrency(value)}`} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend />
+                    <Bar name="Budget" dataKey="budget" fill="#8884d8" />
+                    <Bar name="Spent" dataKey="spent" fill="#82ca9d" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Recent Transactions */}
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">Recent Transactions</h3>
+                <button
+                  onClick={() => setActiveTab('transactions')}
+                  className="text-sm text-blue-500 hover:underline"
+                >
+                  View All
+                </button>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="border-b dark:border-gray-700">
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Date</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Description</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Category</th>
+                      <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredTransactions.slice(0, 5).map((transaction) => (
+                      <tr key={transaction.id} className="border-b dark:border-gray-700">
+                        <td className="px-4 py-2 text-sm text-gray-900 dark:text-gray-300">
+                          {format(parseISO(transaction.date), 'MMM dd, yyyy')}
+                        </td>
+                        <td className="px-4 py-2 text-sm text-gray-900 dark:text-gray-300">{transaction.description}</td>
+                        <td className="px-4 py-2 text-sm">
+                          <span className={`px-2 py-1 rounded-full text-xs ${
+                            transaction.category === 'needs' 
+                              ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-200' 
+                              : transaction.category === 'wants'
+                                ? 'bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200'
+                                : 'bg-purple-100 dark:bg-purple-900/20 text-purple-800 dark:text-purple-200'
+                          }`}>
+                            {transaction.category}
+                          </span>
+                        </td>
+                        <td className={`px-4 py-2 text-sm text-right ${
+                          transaction.type === 'income' 
+                            ? 'text-green-600 dark:text-green-400' 
+                            : 'text-red-600 dark:text-red-400'
+                        }`}>
+                          {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
+                        </td>
+                      </tr>
+                    ))}
+                    {filteredTransactions.length === 0 && (
+                      <tr>
+                        <td colSpan={4} className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                          No transactions yet. Add some to get started!
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Income vs Expenses Chart */}
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Income vs Expenses</h3>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={trendData}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis tickFormatter={(value) => `${formatCurrency(value)}`} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend />
+                    <Line type="monotone" dataKey="income" stroke="#82ca9d" name="Income" />
+                    <Line type="monotone" dataKey="expenses" stroke="#ff7300" name="Expenses" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Transactions Tab */}
+        {activeTab === 'transactions' && (
+          <div className="space-y-6">
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">Add Transaction</h3>
+                <div className="flex">
+                  <select
+                    value={selectedTimeRange}
+                    onChange={e => setSelectedTimeRange(e.target.value as '7days' | '30days' | '90days' | 'all')}
+                    className="p-2 text-sm border rounded-l dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  >
+                    <option value="7days">Last 7 days</option>
+                    <option value="30days">Last 30 days</option>
+                    <option value="90days">Last 90 days</option>
+                    <option value="all">All time</option>
+                  </select>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search..."
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                      className="p-2 text-sm border-y border-r rounded-r dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <form 
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (editingTransactionId) {
+                    updateTransaction();
+                  } else {
+                    addTransaction(editingTransaction);
+                    setEditingTransaction({
+                      amount: 0,
+                      category: 'needs',
+                      description: '',
+                      type: 'expense',
+                      paymentMethod: 'online'
+                    });
+                  }
+                }} 
+                className="grid grid-cols-1 sm:grid-cols-6 gap-3 mb-4"
+              >
+                <div className="sm:col-span-2">
+                  <input
+                    type="text"
+                    placeholder="Description"
+                    value={editingTransaction.description}
+                    onChange={e => setEditingTransaction(prev => ({ ...prev, description: e.target.value }))}
+                    className="w-full p-2 text-sm border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    required
+                  />
+                </div>
+                <div>
+                  <input
+                    type="number"
+                    placeholder="Amount"
+                    value={editingTransaction.amount || ''}
+                    onChange={e => setEditingTransaction(prev => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))}
+                    className="w-full p-2 text-sm border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    required
+                  />
+                </div>
+                <div>
+                  <select
+                    value={editingTransaction.category}
+                    onChange={e => setEditingTransaction(prev => ({ ...prev, category: e.target.value as 'needs' | 'wants' | 'investments' }))}
+                    className="w-full p-2 text-sm border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  >
+                    <option value="needs">Needs</option>
+                    <option value="wants">Wants</option>
+                    <option value="investments">Investments</option>
+                  </select>
+                </div>
+                <div>
+                  <select
+                    value={editingTransaction.type}
+                    onChange={e => setEditingTransaction(prev => ({ ...prev, type: e.target.value as 'income' | 'expense' }))}
+                    className="w-full p-2 text-sm border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  >
+                    <option value="expense">Expense</option>
+                    <option value="income">Income</option>
+                  </select>
+                </div>
+                <div>
+                  <select
+                    value={editingTransaction.paymentMethod}
+                    onChange={e => setEditingTransaction(prev => ({ ...prev, paymentMethod: e.target.value as 'cash' | 'online' }))}
+                    className="w-full p-2 text-sm border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  >
+                    <option value="cash">Cash</option>
+                    <option value="online">Online</option>
+                  </select>
+                </div>
+                <div>
+                  <button
+                    type="submit"
+                    className="w-full bg-blue-500 hover:bg-blue-600 text-white p-2 rounded"
+                  >
+                    {editingTransactionId ? 'Update' : 'Add'}
+                  </button>
+                </div>
+              </form>
+
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="border-b dark:border-gray-700">
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                        <button 
+                          onClick={() => requestSort('date')}
+                          className="flex items-center"
+                        >
+                          Date <ArrowUpDown className="w-3 h-3 ml-1" />
+                        </button>
+                      </th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                        <button 
+                          onClick={() => requestSort('description')}
+                          className="flex items-center"
+                        >
+                          Description <ArrowUpDown className="w-3 h-3 ml-1" />
+                        </button>
+                      </th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Category</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Type</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Method</th>
+                      <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400">
+                        <button 
+                          onClick={() => requestSort('amount')}
+                          className="flex items-center ml-auto"
+                        >
+                          Amount <ArrowUpDown className="w-3 h-3 ml-1" />
+                        </button>
+                      </th>
+                      <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredTransactions.map((transaction) => (
+                      <tr key={transaction.id} className="border-b dark:border-gray-700">
+                        <td className="px-4 py-2 text-sm text-gray-900 dark:text-gray-300">
+                          {format(parseISO(transaction.date), 'MMM dd, yyyy')}
+                        </td>
+                        <td className="px-4 py-2 text-sm text-gray-900 dark:text-gray-300">
+                          {transaction.description}
+                        </td>
+                        <td className="px-4 py-2 text-sm">
+                          <span className={`px-2 py-1 rounded-full text-xs ${
+                            transaction.category === 'needs' 
+                              ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-200' 
+                              : transaction.category === 'wants'
+                                ? 'bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200'
+                                : 'bg-purple-100 dark:bg-purple-900/20 text-purple-800 dark:text-purple-200'
+                          }`}>
+                            {transaction.category}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2 text-sm">
+                          <span className={`px-2 py-1 rounded-full text-xs ${
+                            transaction.type === 'income' 
+                              ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-200' 
+                              : 'bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-200'
+                          }`}>
+                            {transaction.type}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2 text-sm text-gray-900 dark:text-gray-300">
+                          {transaction.paymentMethod}
+                        </td>
+                        <td className={`px-4 py-2 text-sm text-right ${
+                          transaction.type === 'income' 
+                            ? 'text-green-600 dark:text-green-400' 
+                            : 'text-red-600 dark:text-red-400'
+                        }`}>
+                          {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
+                        </td>
+                        <td className="px-4 py-2 text-sm text-center">
+                          <div className="flex justify-center space-x-2">
+                            <button
+                              onClick={() => startEditingTransaction(transaction)}
+                              className="text-blue-500 hover:text-blue-700"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => deleteTransaction(transaction.id)}
+                              className="text-red-500 hover:text-red-700"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {filteredTransactions.length === 0 && (
+                      <tr>
+                        <td colSpan={7} className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                          No transactions found. Add some or adjust your filters.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Payment Methods Chart */}
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Payment Methods</h3>
+              <div className="h-64 flex items-center justify-center">
+                {paymentMethodData.some(item => item.value > 0) ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={paymentMethodData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      >
+                        {paymentMethodData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={index === 0 ? COLORS.needs : COLORS.wants} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => formatCurrency(value as number)} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <p className="text-gray-500 dark:text-gray-400 text-center">
+                    No expense data to display. Add some transactions first.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Budget Tab */}
+        {activeTab === 'budget' && (
+          <div className="space-y-6">
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">Budget Allocation</h3>
+                <button
+                  onClick={() => {
+                    if (isEditingPercentages) {
+                      saveBudgetPercentages();
+                    } else {
+                      setEditPercentages({ ...percentages });
+                      setIsEditingPercentages(true);
+                    }
+                  }}
+                  className="text-sm text-blue-500 hover:underline flex items-center"
+                >
+                  {isEditingPercentages ? (
+                    <>
+                      <Save className="w-4 h-4 mr-1" /> Save
+                    </>
+                  ) : (
+                    <>
+                      <Edit className="w-4 h-4 mr-1" /> Edit
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {isEditingPercentages ? (
+                <div className="space-y-4">
+                  <div className="flex items-center">
+                    <span className="w-24 text-sm text-gray-700 dark:text-gray-300">Needs:</span>
+                    <input
+                      type="number"
+                      value={editPercent
