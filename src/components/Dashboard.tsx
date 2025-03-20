@@ -714,4 +714,30 @@ export default function Dashboard() {
               {/* Savings */}
               <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center
+                  <div className="flex items-center gap-2">
+                    <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-full">
+                      <PiggyBank className="w-5 h-5 text-purple-500 dark:text-purple-400" />
+                    </div>
+                    <h2 className="text-lg font-semibold dark:text-white">Total Savings</h2>
+                  </div>
+                  <HelpCircle className="w-4 h-4 text-gray-400 cursor-help" title="Your accumulated savings amount." />
+                </div>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                  {formatCurrency(accumulatedSavings.needs + accumulatedSavings.wants + accumulatedSavings.investments)}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Combining your needs, wants, and investments savings.
+                </p>
+
+                {/* Savings Goal Section */}
+                <SavingsGoals
+                  savingsGoals={savingsGoals}
+                  addSavingsGoal={addSavingsGoal}
+                  updateSavingsGoal={updateSavingsGoal}
+                  deleteSavingsGoal={deleteSavingsGoal}
+                  newGoal={newGoal}
+                  setNewGoal={setNewGoal}
+                  showSavingsForm={showSavingsForm}
+                  setShowSavingsForm={setShowSavingsForm}
+                />
+              </div>
