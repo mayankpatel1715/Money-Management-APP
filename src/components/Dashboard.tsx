@@ -67,6 +67,162 @@ const COLORS = {
   expense: '#EF4444'
 };
 
+// SavingsGoals Component
+interface SavingsGoalsProps {
+  savingsGoals: SavingsGoal[];
+  addSavingsGoal: () => void;
+  updateSavingsGoal: (id: string, amount: number) => void;
+  deleteSavingsGoal: (id: string) => void;
+  newGoal: Omit<SavingsGoal, 'id'>;
+  setNewGoal: React.Dispatch<React.SetStateAction<Omit<SavingsGoal, 'id'>>>;
+  showSavingsForm: boolean;
+  setShowSavingsForm: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+const SavingsGoals: React.FC<SavingsGoalsProps> = ({
+  savingsGoals,
+  addSavingsGoal,
+  updateSavingsGoal,
+  deleteSavingsGoal,
+  newGoal,
+  setNewGoal,
+  showSavingsForm,
+  setShowSavingsForm
+}) => {
+  const [contributionAmount, setContributionAmount] = useState<{ [key: string]: string }>({});
+
+  const handleContribution = (id: string) => {
+    const amount = parseFloat(contributionAmount[id]);
+    if (!isNaN(amount) && amount > 0) {
+      updateSavingsGoal(id, amount);
+      setContributionAmount(prev => ({ ...prev, [id]: '' }));
+    }
+  };
+
+  return (
+    <div className="mt-4">
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Savings Goals</h3>
+        <button
+          onClick={() => setShowSavingsForm(prev => !prev)}
+          className="text-xs text-blue-500 hover:underline"
+        >
+          {showSavingsForm ? 'Cancel' : '+ Add goal'}
+        </button>
+      </div>
+
+      {showSavingsForm && (
+        <div className="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-md mb-3">
+          <div className="space-y-2">
+            <input
+              type="text"
+              placeholder="Goal name"
+              value={newGoal.name}
+              onChange={e => setNewGoal(prev => ({ ...prev, name: e.target.value }))}
+              className="w-full p-2 text-sm border rounded dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+            />
+            <div className="flex gap-2">
+              <input
+                type="number"
+                placeholder="Target amount"
+                value={newGoal.targetAmount || ''}
+                onChange={e => setNewGoal(prev => ({ ...prev, targetAmount: parseFloat(e.target.value) || 0 }))}
+                className="flex-1 p-2 text-sm border rounded dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+              />
+              <input
+                type="date"
+                value={newGoal.deadline}
+                onChange={e => setNewGoal(prev => ({ ...prev, deadline: e.target.value }))}
+                className="flex-1 p-2 text-sm border rounded dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+              />
+            </div>
+            <select
+              value={newGoal.category}
+              onChange={e => setNewGoal(prev => ({ ...prev, category: e.target.value as 'short_term' | 'long_term' }))}
+              className="w-full p-2 text-sm border rounded dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+            >
+              <option value="short_term">Short Term</option>
+              <option value="long_term">Long Term</option>
+            </select>
+            <button
+              onClick={addSavingsGoal}
+              disabled={!newGoal.name || newGoal.targetAmount <= 0}
+              className="w-full bg-blue-500 hover:bg-blue-600 text-white p-2 rounded text-sm disabled:opacity-50"
+            >
+              Add Goal
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="space-y-2 max-h-40 overflow-y-auto">
+        {savingsGoals.map(goal => {
+          const progress = (goal.currentAmount / goal.targetAmount) * 100;
+          const isComplete = progress >= 100;
+          const daysLeft = Math.ceil((new Date(goal.deadline).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+          
+          return (
+            <div 
+              key={goal.id} 
+              className={`p-2 border rounded-md text-sm ${
+                isComplete 
+                  ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-900' 
+                  : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+              }`}
+            >
+              <div className="flex justify-between items-center mb-1">
+                <span className="font-medium dark:text-white">{goal.name}</span>
+                <button
+                  onClick={() => deleteSavingsGoal(goal.id)}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              </div>
+              
+              <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
+                <span>{formatCurrency(goal.currentAmount)} / {formatCurrency(goal.targetAmount)}</span>
+                <span className={daysLeft < 0 ? 'text-red-500' : ''}>
+                  {daysLeft < 0 ? 'Overdue' : `${daysLeft} days left`}
+                </span>
+              </div>
+              
+              <div className="w-full bg-gray-200 dark:bg-gray-700 h-1.5 rounded-full mb-2">
+                <div 
+                  className={`h-1.5 rounded-full ${isComplete ? 'bg-green-500' : 'bg-blue-500'}`} 
+                  style={{ width: `${Math.min(progress, 100)}%` }}
+                ></div>
+              </div>
+              
+              {!isComplete && (
+                <div className="flex gap-1 mt-1">
+                  <input
+                    type="number"
+                    placeholder="Amount"
+                    value={contributionAmount[goal.id] || ''}
+                    onChange={e => setContributionAmount(prev => ({ ...prev, [goal.id]: e.target.value }))}
+                    className="flex-1 p-1 text-xs border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  />
+                  <button
+                    onClick={() => handleContribution(goal.id)}
+                    className="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600"
+                  >
+                    Add
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
+        
+        {savingsGoals.length === 0 && !showSavingsForm && (
+          <p className="text-xs text-gray-500 dark:text-gray-400 italic">No savings goals yet. Add one to track your progress.</p>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export default function Dashboard() {
   const [monthlyIncome, setMonthlyIncome] = useState(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -577,167 +733,3 @@ export default function Dashboard() {
             </button>
             <button
               onClick={toggleDarkMode}
-              className="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200"
-              title="Toggle dark mode"
-            >
-              {isDarkMode ? '🌞' : '🌙'}
-            </button>
-            <button
-              onClick={resetData}
-              className="p-2 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-200 hover:bg-red-200 dark:hover:bg-red-800 transition-colors"
-              title="Reset all data"
-            >
-              <RotateCcw className="w-5 h-5" />
-            </button>
-          </div>
-        </header>
-
-        {/* Navigation Tabs */}
-        <div className="flex overflow-x-auto bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-6">
-          <button
-            onClick={() => setActiveTab('dashboard')}
-            className={`flex items-center px-4 py-3 font-medium transition-colors ${
-              activeTab === 'dashboard'
-                ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-500'
-                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-            }`}
-          >
-            <PieChartIcon className="w-5 h-5 mr-2" />
-            <span>Dashboard</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('transactions')}
-            className={`flex items-center px-4 py-3 font-medium transition-colors ${
-              activeTab === 'transactions'
-                ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-500'
-                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-            }`}
-          >
-            <TrendingUp className="w-5 h-5 mr-2" />
-            <span>Transactions</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('budget')}
-            className={`flex items-center px-4 py-3 font-medium transition-colors ${
-              activeTab === 'budget'
-                ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-500'
-                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-            }`}
-          >
-            <Target className="w-5 h-5 mr-2" />
-            <span>Budget</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('savings')}
-            className={`flex items-center px-4 py-3 font-medium transition-colors ${
-              activeTab === 'savings'
-                ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-500'
-                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-            }`}
-          >
-            <PiggyBank className="w-5 h-5 mr-2" />
-            <span>Savings</span>
-          </button>
-        </div>
-
-        {/* Dashboard View */}
-        {activeTab === 'dashboard' && (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-              {/* Monthly Income Card */}
-              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">
-                      <Wallet className="w-5 h-5 text-blue-500 dark:text-blue-400" />
-                    </div>
-                    <h2 className="text-lg font-semibold dark:text-white">Monthly Income</h2>
-                  </div>
-                  <HelpCircle className="w-4 h-4 text-gray-400 cursor-help" title="Your total income for the current month" />
-                </div>
-                <p className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                  {formatCurrency(totalMonthlyIncome)}
-                </p>
-                <div className="mt-2">
-                  <button
-                    onClick={() => document.getElementById('income-form')?.scrollIntoView({ behavior: 'smooth' })}
-                    className="text-sm text-blue-500 dark:text-blue-400 hover:underline"
-                  >
-                    + Add new income
-                  </button>
-                </div>
-              </div>
-
-              {/* Monthly Expenses Card */}
-              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-full">
-                      <AlertTriangle className="w-5 h-5 text-red-500 dark:text-red-400" />
-                    </div>
-                    <h2 className="text-lg font-semibold dark:text-white">Monthly Expenses</h2>
-                  </div>
-                  <HelpCircle className="w-4 h-4 text-gray-400 cursor-help" title="Your total expenses for the current month" />
-                </div>
-                <p className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                  {formatCurrency(totalExpenses)}
-                </p>
-                <div className="mt-2">
-                  <button
-                    onClick={() => document.getElementById('expense-form')?.scrollIntoView({ behavior: 'smooth' })}
-                    className="text-sm text-blue-500 dark:text-blue-400 hover:underline"
-                  >
-                    + Add new expense
-                  </button>
-                </div>
-              </div>
-
-              {/* Daily Spending Limit */}
-              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-full">
-                      <Target className="w-5 h-5 text-green-500 dark:text-green-400" />
-                    </div>
-                    <h2 className="text-lg font-semibold dark:text-white">Daily Limit</h2>
-                  </div>
-                  <HelpCircle className="w-4 h-4 text-gray-400 cursor-help" title="Recommended daily spending limit based on your budget" />
-                </div>
-                <p className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                  {formatCurrency(dailyLimit)}
-                </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Based on your needs allocation
-                </p>
-              </div>
-
-              {/* Savings */}
-              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-full">
-                      <PiggyBank className="w-5 h-5 text-purple-500 dark:text-purple-400" />
-                    </div>
-                    <h2 className="text-lg font-semibold dark:text-white">Total Savings</h2>
-                  </div>
-                  <HelpCircle className="w-4 h-4 text-gray-400 cursor-help" title="Your accumulated savings amount." />
-                </div>
-                <p className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                  {formatCurrency(accumulatedSavings.needs + accumulatedSavings.wants + accumulatedSavings.investments)}
-                </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Combining your needs, wants, and investments savings.
-                </p>
-
-                {/* Savings Goal Section */}
-                <SavingsGoals
-                  savingsGoals={savingsGoals}
-                  addSavingsGoal={addSavingsGoal}
-                  updateSavingsGoal={updateSavingsGoal}
-                  deleteSavingsGoal={deleteSavingsGoal}
-                  newGoal={newGoal}
-                  setNewGoal={setNewGoal}
-                  showSavingsForm={showSavingsForm}
-                  setShowSavingsForm={setShowSavingsForm}
-                />
-              </div>
